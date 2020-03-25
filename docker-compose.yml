@@ -1,0 +1,67 @@
+version: '2'
+services:
+  apache:
+    image: rafaelcgstz/magento1
+    # build: .
+    ports:
+      - "80:80" # web
+      - "443:443" # web
+      - "9001:9000" # xdebug
+      # - "35729:35729" # live reload
+    volumes:
+      - ./src:/var/www/html
+      - ~/.composer:/var/www/.composer
+      - ~/.npm:/var/www/.npm
+      - ./.docker/config/magento.conf:/etc/apache2/sites-enabled/magento.conf
+      # - ~/.nvm:/var/www/.nvm
+    environment:
+      XDEBUG_CONFIG: "remote_host=localhost remote_connect_back=1"
+      PHP_IDE_CONFIG: "serverName=Docker"
+    depends_on:
+      - db
+    links:
+      - db
+    networks:
+      - maranatha-network
+
+  db:
+    image: mysql:5.6
+    ports:
+     - 3306:3306
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=magento
+      - MYSQL_USER=magento
+      - MYSQL_PASSWORD=magento
+    volumes:
+      - maranadata:/var/lib/mysql
+    networks:
+      - maranatha-network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    environment:
+     - PMA_HOST=db
+     - PMA_USER=root
+     - PMA_PASSWORD=root
+     - MYSQL_ROOT_PASSWORD=root
+    ports:
+     - 8080:80
+    networks:
+      - maranatha-network    
+
+  mailhog:
+    image: mailhog/mailhog
+    ports:
+      - 1025:1025
+      - 8025:8025
+    networks:
+      - maranatha-network
+
+networks:
+  maranatha-network:
+    driver: bridge
+
+volumes:
+  maranadata:
+    driver: local
